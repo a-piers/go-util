@@ -13,20 +13,20 @@ type OptionsFn func(*Server)
 // WithoutSSL disables SSL check for email server
 func WithoutSSL() OptionsFn {
 	return func(s *Server) {
-		s.SSL = false
+		s.Dailer.SSL = false
 	}
 }
 
 // SkipSSLVerify will not verify emial server certificate
 func SkipSSLVerify() OptionsFn {
 	return func(s *Server) {
-		s.TLSConfig.InsecureSkipVerify = true
+		s.Dailer.TLSConfig.InsecureSkipVerify = true
 	}
 }
 
 // Server represents the email server
 type Server struct {
-	*gomail.Dialer
+	Dailer *gomail.Dialer
 }
 
 // Message represents the email details
@@ -39,8 +39,12 @@ type Message struct {
 }
 
 // NewServer creates new Mail server connection
-func NewServer(options ...OptionsFn) (s *Server) {
-	s = &Server{}
+func NewServer(host string, port int, username, password string, options ...OptionsFn) (s *Server) {
+	d := gomail.NewDialer(host, port, username, password)
+	s = &Server{
+		// Dialer: &gomail.Dialer{
+		Dailer: d,
+	}
 
 	for _, optionFn := range options {
 		optionFn(s)
@@ -75,7 +79,7 @@ func (s *Server) Send(m *Message) error {
 	// d := gomail.NewDialer(s.Host, s.Port, s.Username, s.Password)
 
 	// Send the message using the dailer.
-	if err := s.DialAndSend(message); err != nil {
+	if err := s.Dailer.DialAndSend(message); err != nil {
 		return fmt.Errorf("Unable to send message: %s", err)
 	}
 	return nil
